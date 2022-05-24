@@ -1,0 +1,15 @@
+# https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-properties-s3-bucket.html
+AWSTemplateFormatVersion: "2010-09-09"
+Description: s3 bucket - v1
+
+Resources:
+  Bucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: "${BUCKET_NAME}"
+      ObjectLockEnabled: False
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true

@@ -74,7 +74,7 @@ make eks
 5. Setup EKS and Kubectl
 
 ```
-Add the correct cluster name here after it is created.0
+Add the correct cluster name here after it is created.
 
     CLUSTER_NAME=<cluster-name>
     REGION=ap-southeast-2

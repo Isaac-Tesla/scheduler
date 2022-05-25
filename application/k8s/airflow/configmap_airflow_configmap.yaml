@@ -1,0 +1,11 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: airflow-configmap
+data:
+  # For Kubernetes Pod Template
+  airflow__api__auth_backend: airflow.api.auth.backend.basic_auth
+  airflow__core__dags_folder: "/opt/airflow/dags"
+  airflow__kubernetes__pod_template_file: "/opt/airflow/pod_templates/pod_template_file.yaml"
+  airflow__logging__base_log_folder: "/opt/airflow/logs"
+  airflow__scheduler__child_process_log_directory: "/opt/airflow/logs/scheduler"

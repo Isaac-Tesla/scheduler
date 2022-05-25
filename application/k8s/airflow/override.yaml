@@ -1,0 +1,188 @@
+env:
+  - name: AIRFLOW__API__AUTH_BACKEND
+    value: airflow.api.auth.backend.basic_auth
+  - name: AIRFLOW__CORE__DAGS_FOLDER
+    value: /opt/airflow/dags
+  - name: AIRFLOW__CORE__LOAD_EXAMPLES
+    value: "False"
+  - name: AIRFLOW__KUBERNETES__POD_TEMPLATE_FILE
+    value: /opt/airflow/pod_templates/pod_template_file.yaml
+  - name: AIRFLOW__KUBERNETES__NAMESPACE
+    value: ${NAMESPACE}
+  - name: AIRFLOW__LOGGING__BASE_LOG_FOLDER
+    value: /opt/airflow/logs
+  - name: AIRFLOW__SCHEDULER__CHILD_PROCESS_LOG_DIRECTORY
+    value: /opt/airflow/logs/scheduler
+  - name: AIRFLOW__SCHEDULER__DAG_DIR_LIST_INTERVAL
+    value: "10"
+  - name: AIRFLOW__SCHEDULER__MIN_FILE_PROCESS_INTERVAL
+    value: "10"  
+
+
+
+# All "pip install" additions are required to be pre-configured into the image.
+#   This is set in the Helm chart and cannot be circumnavigated.
+defaultAirflowRepository: apache/airflow
+defaultAirflowTag: "2.2.3"
+
+
+webserver:
+  service:
+    ports:
+    - name: airflow-ui
+      port: 8080
+      targetPort: airflow-ui
+
+
+podTemplate: |
+  apiVersion: v1
+  kind: Pod
+  metadata:
+    name: dummy-name
+    labels:
+      tier: airflow
+      component: worker
+  spec:
+    containers:
+      - envFrom:      
+          []
+        env:
+          - name: AIRFLOW__CORE__EXECUTOR
+            value: LocalExecutor    
+
+          # Hard Coded Airflow Envs
+          - name: AIRFLOW__CORE__FERNET_KEY
+            valueFrom:
+              secretKeyRef:
+                name: airflow-fernet-key
+                key: fernet-key
+          - name: AIRFLOW__CORE__SQL_ALCHEMY_CONN
+            valueFrom:
+              secretKeyRef:
+                name: airflow-airflow-metadata
+                key: connection
+          - name: AIRFLOW_CONN_AIRFLOW_DB
+            valueFrom:
+              secretKeyRef:
+                name: airflow-airflow-metadata
+                key: connection
+          - name: AIRFLOW__WEBSERVER__SECRET_KEY
+            valueFrom:
+              secretKeyRef:
+                name: airflow-webserver-secret-key
+                key: webserver-secret-key      
+
+          - name: AIRFLOW__CORE__LOAD_EXAMPLES
+            value: "False"
+          - name: AIRFLOW__KUBERNETES_ENVIRONMENT_VARIABLES__AIRFLOW__CORE__LOAD_EXAMPLES
+            value: "False"
+
+          # Dynamically created environment variables
+          - name: AIRFLOW__API__AUTH_BACKEND
+            valueFrom:
+              configMapKeyRef:
+                name: airflow-configmap
+                key: airflow__api__auth_backend
+          - name: AIRFLOW__KUBERNETES_ENVIRONMENT_VARIABLES__AIRFLOW__API__AUTH_BACKEND
+            valueFrom:
+              configMapKeyRef:
+                name: airflow-configmap
+                key: airflow__api__auth_backend
+          - name: AIRFLOW__CORE__DAGS_FOLDER
+            valueFrom:
+              configMapKeyRef:
+                name: airflow-configmap
+                key: airflow__core__dags_folder
+          - name: AIRFLOW__KUBERNETES_ENVIRONMENT_VARIABLES__AIRFLOW__CORE__DAGS_FOLDER
+            valueFrom:
+              configMapKeyRef:
+                name: airflow-configmap
+                key: airflow__core__dags_folder
+          - name: AIRFLOW__KUBERNETES__POD_TEMPLATE_FILE
+            valueFrom:
+              configMapKeyRef:
+                name: airflow-configmap
+                key: airflow__kubernetes__pod_template_file
+          - name: AIRFLOW__KUBERNETES_ENVIRONMENT_VARIABLES__AIRFLOW__KUBERNETES__POD_TEMPLATE_FILE
+            valueFrom:
+              configMapKeyRef:
+                name: airflow-configmap
+                key: airflow__kubernetes__pod_template_file
+          - name: AIRFLOW__LOGGING__BASE_LOG_FOLDER
+            valueFrom:
+              configMapKeyRef:
+                name: airflow-configmap
+                key: airflow__logging__base_log_folder
+          - name: AIRFLOW__KUBERNETES_ENVIRONMENT_VARIABLES__AIRFLOW__LOGGING__BASE_LOG_FOLDER
+            valueFrom:
+              configMapKeyRef:
+                name: airflow-configmap
+                key: airflow__logging__base_log_folder
+          - name: AIRFLOW__SCHEDULER__CHILD_PROCESS_LOG_DIRECTORY
+            valueFrom:
+              configMapKeyRef:
+                name: airflow-configmap
+                key: airflow__scheduler__child_process_log_directory
+          - name: AIRFLOW__KUBERNETES_ENVIRONMENT_VARIABLES__AIRFLOW__SCHEDULER__CHILD_PROCESS_LOG_DIRECTORY
+            valueFrom:
+              configMapKeyRef:
+                name: airflow-configmap
+                key: airflow__scheduler__child_process_log_directory
+          - name: AIRFLOW__SCHEDULER__DAG_DIR_LIST_INTERVAL
+            value: "10"
+          - name: AIRFLOW__KUBERNETES_ENVIRONMENT_VARIABLES__AIRFLOW__SCHEDULER__DAG_DIR_LIST_INTERVAL
+            value: "10"
+          - name: AIRFLOW__SCHEDULER__MIN_FILE_PROCESS_INTERVAL
+            value: "10"
+          - name: AIRFLOW__KUBERNETES_ENVIRONMENT_VARIABLES__AIRFLOW__SCHEDULER__MIN_FILE_PROCESS_INTERVAL
+            value: "10"
+
+          # Dynamically created secret envs
+          
+          # Extra env
+        image: apache/airflow:2.2.3
+        imagePullPolicy: IfNotPresent
+        name: base
+        resources:
+          {}
+        volumeMounts:
+          # - name: logs
+          #   mountPath: "/opt/airflow/logs"
+          # - name: dags
+          #   mountPath: /opt/airflow/dags
+          #   readOnly: False
+          - name: airflow-airflow-config
+            mountPath: "/opt/airflow/airflow.cfg"
+            subPath: airflow.cfg
+            readOnly: true
+          - name: airflow-airflow-config
+            mountPath: "/opt/airflow/config/airflow_local_settings.py"
+            subPath: airflow_local_settings.py
+            readOnly: true
+          - name: airflow-configmap
+            mountPath: /config
+            readOnly: true
+    restartPolicy: Never
+    securityContext: 
+      runAsUser: 50000
+      fsGroup: 0
+    nodeSelector: 
+      {}
+    affinity: 
+      {}
+    tolerations: 
+      []
+    serviceAccountName: airflow-worker
+    volumes:
+    # - name: dags
+    #   persistentVolumeClaim:
+    #     claimName: airflow-dags-pvc
+    # - name: logs
+    #   persistentVolumeClaim:
+    #     claimName: airflow-logs-pvc
+    - name: airflow-airflow-config
+      configMap:
+        name: airflow-airflow-config
+    - name: airflow-configmap
+      configMap:
+        name: airflow-configmap

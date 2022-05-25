@@ -27,3 +27,6 @@ airflow: ## Setup Airflow
 
 airflow_down: ## Tear down Airflow
 	./bash/airflow_down.sh
+
+airflow_pf: ## Port-Forward Airflow
+	kubectl port-forward service/airflow-webserver 8080:8080 --namespace=airflow

@@ -17,7 +17,6 @@
       Default region name: ap-southeast-2
       Default output format: json
 
-
 COMMENT
 
 
